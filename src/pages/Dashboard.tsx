@@ -1,11 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
+import { SpendDonut } from '../components/SpendDonut';
+import { MonthlyTrend } from '../components/MonthlyTrend';
 import { useCarsStore } from '../stores/carsStore';
 import { useExpensesStore } from '../stores/expensesStore';
 import { useDocumentsStore } from '../stores/documentsStore';
 import { formatMoney } from '../lib/format';
 import { EXPIRING_WINDOW_DAYS, daysUntil, getStatus } from '../lib/validity';
+import { monthlyTrend, spendPerCar } from '../lib/analytics';
 
 export default function DashboardPage() {
   const cars = useCarsStore((s) => s.cars);
@@ -20,8 +23,6 @@ export default function DashboardPage() {
     void loadExpenses();
     void loadDocuments();
   }, [loadCars, loadExpenses, loadDocuments]);
-
-  const favCount = useMemo(() => cars.filter((c) => c.favorite).length, [cars]);
 
   const ytdTotal = useMemo(() => {
     const year = new Date().getFullYear();
@@ -44,6 +45,11 @@ export default function DashboardPage() {
       })
       .sort((a, b) => (a.endDate < b.endDate ? -1 : 1));
   }, [documents]);
+
+  const donutData = useMemo(() => spendPerCar(cars, expenses), [cars, expenses]);
+  const trendData = useMemo(() => monthlyTrend(expenses, 12), [expenses]);
+
+  const favCount = useMemo(() => cars.filter((c) => c.favorite).length, [cars]);
 
   return (
     <>
@@ -145,12 +151,10 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-      <div className="mt-6 card p-6">
-        <h2 className="font-display text-xl font-medium">Charts coming soon</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          The donut chart, monthly trend, and full alerts strip ship in the Dashboard
-          Analytics PR.
-        </p>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <SpendDonut data={donutData} />
+        <MonthlyTrend data={trendData} />
       </div>
     </>
   );
