@@ -2,20 +2,15 @@ import { Outlet, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { SideNav } from './SideNav';
 import { ThemeToggle } from './ThemeToggle';
+import { Logo } from './Logo';
 
 export function Layout() {
   return (
     <div className="flex min-h-screen flex-col bg-surface text-ink">
       <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/80 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
-          <Link to="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <span
-              aria-hidden
-              className="grid h-8 w-8 place-items-center rounded-xl bg-brand text-brand-contrast"
-            >
-              ⛽
-            </span>
-            <span>CarTrack</span>
+          <Link to="/" className="group" aria-label="CarTrack home">
+            <Logo size={32} className="transition-transform group-hover:-translate-y-0.5" />
           </Link>
           <ThemeToggle />
         </div>
