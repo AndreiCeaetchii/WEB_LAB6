@@ -1,12 +1,16 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
+import type { Car } from './types';
 
 export const DB_NAME = 'cartrack';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export interface CarTrackDB extends DBSchema {
-  __placeholder: {
+  cars: {
     key: string;
-    value: { id: string };
+    value: Car;
+    indexes: {
+      by_createdAt: number;
+    };
   };
 }
 
@@ -15,10 +19,11 @@ let dbPromise: Promise<IDBPDatabase<CarTrackDB>> | null = null;
 export function getDB(): Promise<IDBPDatabase<CarTrackDB>> {
   if (!dbPromise) {
     dbPromise = openDB<CarTrackDB>(DB_NAME, DB_VERSION, {
-      upgrade(_db, oldVersion) {
-        // schema v1: bootstrap. Entity stores (cars/expenses/documents)
-        // are added by later PRs as the version is bumped.
-        void oldVersion;
+      upgrade(db, oldVersion) {
+        if (oldVersion < 2) {
+          const cars = db.createObjectStore('cars', { keyPath: 'id' });
+          cars.createIndex('by_createdAt', 'createdAt');
+        }
       },
       blocked() {
         console.warn('[cartrack] another tab is holding an older DB version');
