@@ -4,13 +4,16 @@ import { PageHeader } from '../components/PageHeader';
 import { CarForm } from '../components/CarForm';
 import { ExpenseForm } from '../components/ExpenseForm';
 import { ExpenseRow } from '../components/ExpenseRow';
+import { DocumentForm } from '../components/DocumentForm';
+import { DocumentRow } from '../components/DocumentRow';
 import { PlusIcon, StarIcon } from '../components/icons';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
 import { useObjectUrl } from '../lib/useObjectUrl';
 import { formatMoney } from '../lib/format';
 import { useCarsStore } from '../stores/carsStore';
 import { useExpensesStore } from '../stores/expensesStore';
-import type { Expense } from '../lib/types';
+import { useDocumentsStore } from '../stores/documentsStore';
+import type { DocumentKind, Expense, VehicleDocument } from '../lib/types';
 
 export default function CarDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -26,15 +29,25 @@ export default function CarDetailPage() {
   const loadExpenses = useExpensesStore((s) => s.load);
   const removeExpense = useExpensesStore((s) => s.remove);
 
+  const documents = useDocumentsStore((s) => s.documents);
+  const loadDocuments = useDocumentsStore((s) => s.load);
+  const removeDocument = useDocumentsStore((s) => s.remove);
+  const updateDocument = useDocumentsStore((s) => s.update);
+
   const [editOpen, setEditOpen] = useState(false);
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
+  const [docFormOpen, setDocFormOpen] = useState(false);
+  const [editingDocument, setEditingDocument] =
+    useState<VehicleDocument | undefined>();
+  const [docFormKind, setDocFormKind] = useState<DocumentKind>('rca');
   const photoUrl = useObjectUrl(car?.photo);
 
   useEffect(() => {
     void loadCars();
     void loadExpenses();
-  }, [loadCars, loadExpenses]);
+    void loadDocuments();
+  }, [loadCars, loadExpenses, loadDocuments]);
 
   const accent = useMemo(() => (car ? getAccent(car.accentId) : undefined), [car]);
   const accentRgb = useMemo(() => (accent ? hexToRgbTuple(accent.hex) : '14 116 144'), [accent]);
@@ -46,6 +59,10 @@ export default function CarDetailPage() {
   const total = useMemo(
     () => carExpenses.reduce((sum, e) => sum + (Number(e.cost) || 0), 0),
     [carExpenses],
+  );
+  const carDocuments = useMemo(
+    () => documents.filter((d) => d.carId === id),
+    [documents, id],
   );
 
   if (carsLoaded && !car) {
@@ -88,6 +105,27 @@ export default function CarDetailPage() {
   const handleDeleteExpense = async (e: Expense) => {
     if (!confirm('Remove this expense?')) return;
     await removeExpense(e.id);
+  };
+
+  const handleAddDocument = (kind: DocumentKind) => {
+    setEditingDocument(undefined);
+    setDocFormKind(kind);
+    setDocFormOpen(true);
+  };
+  const handleEditDocument = (doc: VehicleDocument) => {
+    setEditingDocument(doc);
+    setDocFormKind(doc.kind);
+    setDocFormOpen(true);
+  };
+  const handleDeleteDocument = async (doc: VehicleDocument) => {
+    if (!confirm('Remove this document and its photos?')) return;
+    await removeDocument(doc.id);
+  };
+  const handleDocumentPhotosChange = async (
+    doc: VehicleDocument,
+    photos: Blob[],
+  ) => {
+    await updateDocument(doc.id, { photos });
   };
 
   return (
@@ -213,11 +251,65 @@ export default function CarDetailPage() {
         )}
       </section>
 
+      <section className="mt-8">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-2xl font-medium tracking-tight">Documents</h2>
+            <p className="text-sm text-ink-muted">
+              RCA insurance and Cartea Verde with multi-photo gallery.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleAddDocument('rca')}
+              className="btn-outline"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add RCA
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAddDocument('cartea-verde')}
+              className="btn-outline"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add Cartea Verde
+            </button>
+          </div>
+        </div>
+        {carDocuments.length === 0 ? (
+          <div className="card p-8 text-center text-sm text-ink-muted">
+            No documents on file for this car yet.
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {carDocuments.map((d) => (
+              <DocumentRow
+                key={d.id}
+                document={d}
+                car={car}
+                onEdit={() => handleEditDocument(d)}
+                onDelete={() => handleDeleteDocument(d)}
+                onPhotosChange={(photos) => handleDocumentPhotosChange(d, photos)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
       <CarForm open={editOpen} onClose={() => setEditOpen(false)} car={car} />
       <ExpenseForm
         open={expenseFormOpen}
         onClose={() => setExpenseFormOpen(false)}
         expense={editingExpense}
+        defaultCarId={car.id}
+      />
+      <DocumentForm
+        open={docFormOpen}
+        onClose={() => setDocFormOpen(false)}
+        kind={docFormKind}
+        document={editingDocument}
         defaultCarId={car.id}
       />
     </div>
