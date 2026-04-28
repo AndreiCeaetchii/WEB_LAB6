@@ -6,6 +6,7 @@ import CarDetailPage from './pages/CarDetail';
 import ExpensesPage from './pages/Expenses';
 import InsurancePage from './pages/Insurance';
 import CarteaVerdePage from './pages/CarteaVerde';
+import SettingsPage from './pages/Settings';
 import NotFoundPage from './pages/NotFound';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="insurance" element={<InsurancePage />} />
           <Route path="cartea-verde" element={<CarteaVerdePage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
