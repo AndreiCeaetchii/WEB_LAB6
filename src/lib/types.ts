@@ -25,3 +25,58 @@ export interface Car {
 export type CarInput = Omit<Car, 'id' | 'createdAt' | 'updatedAt' | 'accentId' | 'favorite'> & {
   favorite?: boolean;
 };
+
+export type ExpenseCategory = 'fuel' | 'repair' | 'parts' | 'inspection' | 'other';
+
+interface ExpenseBase {
+  id: ID;
+  carId: ID;
+  /** ISO date (yyyy-mm-dd) — date the expense actually happened. */
+  date: string;
+  /** Total amount paid in MDL (or whatever the user inputs). */
+  cost: number;
+  /** Optional free-form note. */
+  note?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface FuelExpense extends ExpenseBase {
+  category: 'fuel';
+  liters: number;
+  pricePerLiter: number;
+  odometerKm?: number;
+}
+
+export interface RepairExpense extends ExpenseBase {
+  category: 'repair';
+  description: string;
+  mechanic?: string;
+}
+
+export interface PartsExpense extends ExpenseBase {
+  category: 'parts';
+  partName: string;
+  quantity: number;
+}
+
+export interface InspectionExpense extends ExpenseBase {
+  category: 'inspection';
+  /** ISO date — when the next inspection is due. */
+  nextDueDate?: string;
+}
+
+export interface OtherExpense extends ExpenseBase {
+  category: 'other';
+  /** Free-form label (e.g. "Car wash", "Toll", "Road tax"). */
+  description: string;
+}
+
+export type Expense =
+  | FuelExpense
+  | RepairExpense
+  | PartsExpense
+  | InspectionExpense
+  | OtherExpense;
+
+export type ExpenseInput = Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>;
