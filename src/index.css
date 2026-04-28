@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface: 248 250 252;
+    --surface-muted: 241 245 249;
+    --surface-raised: 255 255 255;
+    --ink: 15 23 42;
+    --ink-muted: 71 85 105;
+    --ink-subtle: 148 163 184;
+    --brand: 14 116 144;
+    --brand-contrast: 255 255 255;
+    --danger: 220 38 38;
+    --warn: 217 119 6;
+    --success: 22 163 74;
+    --border: 226 232 240;
+
+    --car-accent: 14 116 144;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --surface: 12 17 28;
+    --surface-muted: 22 28 42;
+    --surface-raised: 30 38 56;
+    --ink: 241 245 249;
+    --ink-muted: 156 169 191;
+    --ink-subtle: 100 116 139;
+    --brand: 56 189 218;
+    --brand-contrast: 8 47 73;
+    --danger: 248 113 113;
+    --warn: 251 191 36;
+    --success: 74 222 128;
+    --border: 39 49 71;
+
+    color-scheme: dark;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-surface text-ink antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium
+           transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand
+           focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-brand-contrast hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply btn text-ink-muted hover:bg-surface-muted hover:text-ink;
+  }
+  .btn-outline {
+    @apply btn border border-border text-ink hover:bg-surface-muted;
+  }
+  .card {
+    @apply rounded-2xl border border-border bg-surface-raised shadow-card;
+  }
+  .input {
+    @apply w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm text-ink
+           placeholder:text-ink-subtle focus:border-brand focus:outline-none focus:ring-2
+           focus:ring-brand/20;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-border bg-surface-muted
+           px-3 py-1 text-xs font-medium text-ink-muted;
+  }
+}
