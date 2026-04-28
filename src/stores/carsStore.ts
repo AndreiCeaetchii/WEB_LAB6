@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import { getDB } from '../lib/db';
 import { pickNextAccent } from '../lib/palette';
+import { useExpensesStore } from './expensesStore';
 import type { Car, CarInput, ID } from '../lib/types';
 
 const newId = (): ID =>
@@ -89,7 +90,12 @@ export const useCarsStore = create<CarsState>((set, get) => ({
     const db = await getDB();
     await db.delete('cars', id);
     set({ cars: get().cars.filter((c) => c.id !== id) });
-    toast.success('Car removed');
+    const expensesRemoved = await useExpensesStore.getState().removeForCar(id);
+    toast.success(
+      expensesRemoved > 0
+        ? `Car removed (${expensesRemoved} expense${expensesRemoved === 1 ? '' : 's'} cleared)`
+        : 'Car removed',
+    );
   },
 
   toggleFavorite: async (id) => {
