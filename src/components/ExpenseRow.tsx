@@ -1,8 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, type ComponentType, type SVGProps } from 'react';
 import { Link } from 'react-router-dom';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
 import { formatDate, formatMoney } from '../lib/format';
 import type { Car, Expense } from '../lib/types';
+import {
+  FuelPumpIcon,
+  BoltIcon,
+  WrenchIcon,
+  CogwheelIcon,
+  ShieldIcon,
+  SparkleIcon,
+} from '../assets/icons';
 
 interface ExpenseRowProps {
   expense: Expense;
@@ -19,18 +27,25 @@ const CATEGORY_LABEL: Record<Expense['category'], string> = {
   other: 'Other',
 };
 
-const CATEGORY_ICON: Record<Expense['category'], string> = {
-  fuel: '⛽',
-  repair: '🔧',
-  parts: '🔩',
-  inspection: '🛡',
-  other: '✦',
+type Icon = ComponentType<SVGProps<SVGSVGElement>>;
+
+const CATEGORY_ICON: Record<Expense['category'], Icon> = {
+  fuel: FuelPumpIcon,
+  repair: WrenchIcon,
+  parts: CogwheelIcon,
+  inspection: ShieldIcon,
+  other: SparkleIcon,
 };
+
+function iconFor(e: Expense): Icon {
+  if (e.category === 'fuel' && e.unit === 'kWh') return BoltIcon;
+  return CATEGORY_ICON[e.category];
+}
 
 function describe(e: Expense): string {
   switch (e.category) {
     case 'fuel':
-      return `${e.liters.toLocaleString()} L · ${formatMoney(e.pricePerLiter)} / L${
+      return `${e.quantity.toLocaleString()} ${e.unit} · ${formatMoney(e.unitPrice)} / ${e.unit}${
         e.odometerKm !== undefined ? ` · ${e.odometerKm.toLocaleString()} km` : ''
       }`;
     case 'repair':
@@ -53,6 +68,7 @@ export function ExpenseRow({ expense, car, onEdit, onDelete }: ExpenseRowProps) 
     () => (accent ? hexToRgbTuple(accent.hex) : '14 116 144'),
     [accent],
   );
+  const Icon = iconFor(expense);
 
   return (
     <article
@@ -61,13 +77,13 @@ export function ExpenseRow({ expense, car, onEdit, onDelete }: ExpenseRowProps) 
     >
       <span
         aria-hidden
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-base"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
         style={{
           color: 'rgb(var(--car-accent))',
           background: 'rgb(var(--car-accent) / 0.12)',
         }}
       >
-        {CATEGORY_ICON[expense.category]}
+        <Icon width={20} height={20} />
       </span>
 
       <div className="min-w-0 flex-1">
