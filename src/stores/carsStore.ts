@@ -54,6 +54,7 @@ export const useCarsStore = create<CarsState>((set, get) => ({
       vin: input.vin.trim(),
       licensePlate: input.licensePlate.trim(),
       photo: input.photo,
+      isElectric: input.isElectric ?? false,
       accentId: accent.id,
       favorite: input.favorite ?? false,
       createdAt: now,

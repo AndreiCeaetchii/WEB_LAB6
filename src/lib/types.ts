@@ -17,6 +17,8 @@ export interface Car {
   accentId: string;
   /** Compressed registration photo, optional. */
   photo?: Blob;
+  /** True for battery-electric cars; drives fuel-vs-charge UI on expense entry. */
+  isElectric: boolean;
   favorite: boolean;
   createdAt: number;
   updatedAt: number;
@@ -41,10 +43,17 @@ interface ExpenseBase {
   updatedAt: number;
 }
 
+/** 'L' for combustion (petrol/diesel/hybrid), 'kWh' for electric charging. */
+export type FuelUnit = 'L' | 'kWh';
+
 export interface FuelExpense extends ExpenseBase {
   category: 'fuel';
-  liters: number;
-  pricePerLiter: number;
+  /** Unit captured at entry time so historical rows render correctly even if the car later switches type. */
+  unit: FuelUnit;
+  /** Amount of fuel/energy: liters or kWh. */
+  quantity: number;
+  /** Price per liter or per kWh. */
+  unitPrice: number;
   odometerKm?: number;
 }
 
