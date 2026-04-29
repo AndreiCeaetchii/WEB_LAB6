@@ -1,6 +1,14 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode, type ComponentType, type SVGProps } from 'react';
 import toast from 'react-hot-toast';
 import { Modal } from './Modal';
+import {
+  FuelPumpIcon,
+  BoltIcon,
+  WrenchIcon,
+  CogwheelIcon,
+  ShieldIcon,
+  SparkleIcon,
+} from '../assets/icons';
 import { useCarsStore } from '../stores/carsStore';
 import { useExpensesStore } from '../stores/expensesStore';
 import { todayISO } from '../lib/format';
@@ -32,13 +40,17 @@ const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   other: 'Other',
 };
 
-const CATEGORY_ICON: Record<ExpenseCategory, string> = {
-  fuel: '⛽',
-  repair: '🔧',
-  parts: '🔩',
-  inspection: '🛡',
-  other: '✦',
+type Icon = ComponentType<SVGProps<SVGSVGElement>>;
+
+const CATEGORY_ICON: Record<ExpenseCategory, Icon> = {
+  fuel: FuelPumpIcon,
+  repair: WrenchIcon,
+  parts: CogwheelIcon,
+  inspection: ShieldIcon,
+  other: SparkleIcon,
 };
+
+type FuelField = 'fuelQuantity' | 'fuelUnitPrice' | 'cost';
 
 interface FormState {
   carId: string;
@@ -47,9 +59,11 @@ interface FormState {
   cost: string;
   note: string;
   // fuel
-  liters: string;
-  pricePerLiter: string;
+  fuelQuantity: string;
+  fuelUnitPrice: string;
   odometerKm: string;
+  /** Most-recent-first list of which two fuel fields the user typed in directly. */
+  fuelEditOrder: FuelField[];
   // repair
   description: string;
   mechanic: string;
@@ -68,9 +82,10 @@ const blankState = (defaultCarId: string = ''): FormState => ({
   date: todayISO(),
   cost: '',
   note: '',
-  liters: '',
-  pricePerLiter: '',
+  fuelQuantity: '',
+  fuelUnitPrice: '',
   odometerKm: '',
+  fuelEditOrder: [],
   description: '',
   mechanic: '',
   partName: '',
@@ -92,9 +107,10 @@ function fromExpense(e: Expense): FormState {
     case 'fuel':
       return {
         ...base,
-        liters: String(e.liters),
-        pricePerLiter: String(e.pricePerLiter),
+        fuelQuantity: String(e.quantity),
+        fuelUnitPrice: String(e.unitPrice),
         odometerKm: e.odometerKm !== undefined ? String(e.odometerKm) : '',
+        fuelEditOrder: ['fuelQuantity', 'fuelUnitPrice'],
       };
     case 'repair':
       return { ...base, description: e.description, mechanic: e.mechanic ?? '' };
@@ -105,6 +121,40 @@ function fromExpense(e: Expense): FormState {
     case 'other':
       return { ...base, otherDescription: e.description };
   }
+}
+
+/**
+ * Recompute the field NOT in `editOrder` from the two that are, if both parse to
+ * positive numbers. Returns the patch to apply (may be empty). Rounds to 2 dp.
+ */
+function deriveFuelThird(state: FormState): Partial<FormState> {
+  const all: FuelField[] = ['fuelQuantity', 'fuelUnitPrice', 'cost'];
+  const known = state.fuelEditOrder.slice(0, 2);
+  if (known.length < 2) return {};
+  const target = all.find((f) => !known.includes(f));
+  if (!target) return {};
+  const a = Number(state[known[0]]);
+  const b = Number(state[known[1]]);
+  if (!Number.isFinite(a) || a <= 0 || !Number.isFinite(b) || b <= 0) return {};
+  const round = (n: number) => (Math.round(n * 100) / 100).toString();
+  if (target === 'cost') {
+    // quantity * unitPrice
+    const qty = Number(state.fuelQuantity);
+    const unit = Number(state.fuelUnitPrice);
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(unit) || unit <= 0) return {};
+    return { cost: round(qty * unit) };
+  }
+  if (target === 'fuelUnitPrice') {
+    const qty = Number(state.fuelQuantity);
+    const total = Number(state.cost);
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(total) || total <= 0) return {};
+    return { fuelUnitPrice: round(total / qty) };
+  }
+  // fuelQuantity
+  const unit = Number(state.fuelUnitPrice);
+  const total = Number(state.cost);
+  if (!Number.isFinite(unit) || unit <= 0 || !Number.isFinite(total) || total <= 0) return {};
+  return { fuelQuantity: round(total / unit) };
 }
 
 export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFormProps) {
@@ -123,6 +173,19 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((s) => ({ ...s, [k]: v }));
 
+  /** Track which two fuel fields the user just edited, then auto-derive the third. */
+  const setFuelField = (field: FuelField, value: string) => {
+    setForm((s) => {
+      const editOrder = [field, ...s.fuelEditOrder.filter((f) => f !== field)].slice(0, 2);
+      const next = { ...s, [field]: value, fuelEditOrder: editOrder };
+      return { ...next, ...deriveFuelThird(next) };
+    });
+  };
+
+  const selectedCar = cars.find((c) => c.id === form.carId);
+  const fuelUnit: 'L' | 'kWh' = selectedCar?.isElectric ? 'kWh' : 'L';
+  const isElectric = selectedCar?.isElectric === true;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.carId) {
@@ -130,7 +193,7 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
       return;
     }
     const cost = Number(form.cost);
-    if (!Number.isFinite(cost) || cost < 0) {
+    if (form.category !== 'fuel' && (!Number.isFinite(cost) || cost < 0)) {
       toast.error('Cost must be a positive number');
       return;
     }
@@ -142,14 +205,18 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
     let input: ExpenseInput;
     switch (form.category) {
       case 'fuel': {
-        const liters = Number(form.liters);
-        const ppl = Number(form.pricePerLiter);
-        if (!Number.isFinite(liters) || liters <= 0) {
-          toast.error('Liters must be greater than zero');
+        const qty = Number(form.fuelQuantity);
+        const unitPrice = Number(form.fuelUnitPrice);
+        if (!Number.isFinite(qty) || qty <= 0) {
+          toast.error(`${fuelUnit === 'kWh' ? 'kWh' : 'Liters'} must be greater than zero`);
           return;
         }
-        if (!Number.isFinite(ppl) || ppl < 0) {
-          toast.error('Price per liter must be a number');
+        if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+          toast.error(`Price per ${fuelUnit} must be greater than zero`);
+          return;
+        }
+        if (!Number.isFinite(cost) || cost <= 0) {
+          toast.error('Total cost must be greater than zero');
           return;
         }
         const odo = form.odometerKm.trim() ? Number(form.odometerKm) : undefined;
@@ -157,10 +224,11 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
           carId: form.carId,
           category: 'fuel',
           date: form.date,
-          cost: cost || liters * ppl,
+          cost,
           note: form.note.trim() || undefined,
-          liters,
-          pricePerLiter: ppl,
+          unit: fuelUnit,
+          quantity: qty,
+          unitPrice,
           odometerKm: odo !== undefined && Number.isFinite(odo) ? odo : undefined,
         };
         input = fuelInput;
@@ -246,43 +314,75 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
 
   const categoryFields: ReactNode = (() => {
     switch (form.category) {
-      case 'fuel':
+      case 'fuel': {
+        const derived = form.fuelEditOrder.length === 2
+          ? (['fuelQuantity', 'fuelUnitPrice', 'cost'] as const).find(
+              (f) => !form.fuelEditOrder.includes(f),
+            )
+          : undefined;
+        const qtyLabel = isElectric ? 'kWh' : 'Liters';
+        const priceLabel = isElectric ? 'Price / kWh' : 'Price / L';
         return (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <label>
-              <span className="label">Liters</span>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.liters}
-                onChange={(e) => set('liters', e.target.value)}
-              />
-            </label>
-            <label>
-              <span className="label">Price / liter</span>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.pricePerLiter}
-                onChange={(e) => set('pricePerLiter', e.target.value)}
-              />
-            </label>
-            <label>
-              <span className="label">Odometer (km)</span>
-              <input
-                className="input"
-                type="number"
-                min="0"
-                value={form.odometerKm}
-                onChange={(e) => set('odometerKm', e.target.value)}
-              />
-            </label>
-          </div>
+          <>
+            <p className="flex items-center gap-1.5 text-xs text-ink-subtle">
+              {isElectric ? (
+                <BoltIcon aria-hidden width={14} height={14} />
+              ) : (
+                <FuelPumpIcon aria-hidden width={14} height={14} />
+              )}
+              <span>
+                {isElectric
+                  ? 'Electric — fill any two of kWh, price/kWh, total. The third auto-fills.'
+                  : 'Combustion — fill any two of liters, price/L, total. The third auto-fills.'}
+              </span>
+            </p>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              <label>
+                <span className="label">
+                  {qtyLabel}
+                  {derived === 'fuelQuantity' && (
+                    <span className="ml-1 text-xs text-ink-subtle">(auto)</span>
+                  )}
+                </span>
+                <input
+                  className="input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.fuelQuantity}
+                  onChange={(e) => setFuelField('fuelQuantity', e.target.value)}
+                />
+              </label>
+              <label>
+                <span className="label">
+                  {priceLabel}
+                  {derived === 'fuelUnitPrice' && (
+                    <span className="ml-1 text-xs text-ink-subtle">(auto)</span>
+                  )}
+                </span>
+                <input
+                  className="input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.fuelUnitPrice}
+                  onChange={(e) => setFuelField('fuelUnitPrice', e.target.value)}
+                />
+              </label>
+              <label>
+                <span className="label">Odometer (km)</span>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  value={form.odometerKm}
+                  onChange={(e) => set('odometerKm', e.target.value)}
+                />
+              </label>
+            </div>
+          </>
         );
+      }
       case 'repair':
         return (
           <div className="grid gap-3 md:grid-cols-2">
@@ -386,6 +486,7 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
           <div role="tablist" className="grid grid-cols-5 gap-2">
             {(Object.keys(CATEGORY_LABEL) as ExpenseCategory[]).map((cat) => {
               const active = form.category === cat;
+              const CatIcon = CATEGORY_ICON[cat];
               return (
                 <button
                   type="button"
@@ -399,9 +500,7 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
                       : 'border-border bg-surface-muted text-ink-muted hover:border-brand/40'
                   }`}
                 >
-                  <span aria-hidden className="text-lg">
-                    {CATEGORY_ICON[cat]}
-                  </span>
+                  <CatIcon aria-hidden width={20} height={20} />
                   {CATEGORY_LABEL[cat]}
                 </button>
               );
@@ -443,7 +542,12 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
 
         <label>
           <span className="label">
-            Cost {form.category === 'fuel' && '(auto-calculated if blank)'}
+            Total cost
+            {form.category === 'fuel' &&
+              form.fuelEditOrder.length === 2 &&
+              !form.fuelEditOrder.includes('cost') && (
+                <span className="ml-1 text-xs text-ink-subtle">(auto)</span>
+              )}
           </span>
           <input
             className="input"
@@ -452,7 +556,11 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
             min="0"
             placeholder="0"
             value={form.cost}
-            onChange={(e) => set('cost', e.target.value)}
+            onChange={(e) =>
+              form.category === 'fuel'
+                ? setFuelField('cost', e.target.value)
+                : set('cost', e.target.value)
+            }
           />
         </label>
 
