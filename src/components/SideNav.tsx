@@ -4,6 +4,7 @@ import {
   ExpenseIcon,
   GarageIcon,
   GreenCardIcon,
+  SettingsIcon,
   ShieldIcon,
 } from './icons';
 import type { ComponentType, SVGProps } from 'react';
@@ -20,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/expenses', label: 'Expenses', icon: ExpenseIcon },
   { to: '/insurance', label: 'Insurance', icon: ShieldIcon },
   { to: '/cartea-verde', label: 'Cartea Verde', icon: GreenCardIcon },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export function SideNav() {
