@@ -3,6 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import { SideNav } from './SideNav';
 import { ThemeToggle } from './ThemeToggle';
 import { Logo } from './Logo';
+import { QuickAddMenu } from './QuickAddMenu';
+import { QuickAddForms } from './QuickAddForms';
 
 export function Layout() {
   return (
@@ -12,7 +14,10 @@ export function Layout() {
           <Link to="/" className="group" aria-label="CarTrack home">
             <Logo size={32} className="transition-transform group-hover:-translate-y-0.5" />
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <QuickAddMenu />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -31,6 +36,8 @@ export function Layout() {
       <nav className="sticky bottom-0 z-20 border-t border-border bg-surface-raised md:hidden">
         <SideNav />
       </nav>
+
+      <QuickAddForms />
 
       <Toaster
         position="top-right"

@@ -1,8 +1,8 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
-import type { Car, Expense } from './types';
+import type { Car, Expense, VehicleDocument } from './types';
 
 export const DB_NAME = 'cartrack';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export interface CarTrackDB extends DBSchema {
   cars: {
@@ -19,6 +19,15 @@ export interface CarTrackDB extends DBSchema {
       by_carId: string;
       by_category: string;
       by_date: string;
+    };
+  };
+  documents: {
+    key: string;
+    value: VehicleDocument;
+    indexes: {
+      by_carId: string;
+      by_kind: string;
+      by_endDate: string;
     };
   };
 }
@@ -38,6 +47,12 @@ export function getDB(): Promise<IDBPDatabase<CarTrackDB>> {
           expenses.createIndex('by_carId', 'carId');
           expenses.createIndex('by_category', 'category');
           expenses.createIndex('by_date', 'date');
+        }
+        if (oldVersion < 4) {
+          const documents = db.createObjectStore('documents', { keyPath: 'id' });
+          documents.createIndex('by_carId', 'carId');
+          documents.createIndex('by_kind', 'kind');
+          documents.createIndex('by_endDate', 'endDate');
         }
       },
       blocked() {

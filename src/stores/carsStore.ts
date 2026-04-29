@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { getDB } from '../lib/db';
 import { pickNextAccent } from '../lib/palette';
 import { useExpensesStore } from './expensesStore';
+import { useDocumentsStore } from './documentsStore';
 import type { Car, CarInput, ID } from '../lib/types';
 
 const newId = (): ID =>
@@ -91,10 +92,12 @@ export const useCarsStore = create<CarsState>((set, get) => ({
     await db.delete('cars', id);
     set({ cars: get().cars.filter((c) => c.id !== id) });
     const expensesRemoved = await useExpensesStore.getState().removeForCar(id);
+    const documentsRemoved = await useDocumentsStore.getState().removeForCar(id);
+    const cleaned: string[] = [];
+    if (expensesRemoved > 0) cleaned.push(`${expensesRemoved} expense${expensesRemoved === 1 ? '' : 's'}`);
+    if (documentsRemoved > 0) cleaned.push(`${documentsRemoved} document${documentsRemoved === 1 ? '' : 's'}`);
     toast.success(
-      expensesRemoved > 0
-        ? `Car removed (${expensesRemoved} expense${expensesRemoved === 1 ? '' : 's'} cleared)`
-        : 'Car removed',
+      cleaned.length ? `Car removed (${cleaned.join(', ')} cleared)` : 'Car removed',
     );
   },
 

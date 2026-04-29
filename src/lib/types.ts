@@ -80,3 +80,27 @@ export type Expense =
   | OtherExpense;
 
 export type ExpenseInput = Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type DocumentKind = 'rca' | 'cartea-verde';
+
+export interface VehicleDocument {
+  id: ID;
+  carId: ID;
+  kind: DocumentKind;
+  insurer: string;
+  policyNumber: string;
+  /** ISO yyyy-mm-dd */
+  startDate: string;
+  /** ISO yyyy-mm-dd */
+  endDate: string;
+  cost: number;
+  /** Compressed photo blobs of the policy/document. */
+  photos: Blob[];
+  note?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type DocumentInput = Omit<VehicleDocument, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type DocumentStatus = 'active' | 'expiring' | 'expired';
