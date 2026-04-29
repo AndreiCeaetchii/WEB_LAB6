@@ -2,6 +2,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import DashboardPage from './pages/Dashboard';
 import GaragePage from './pages/Garage';
+import CarDetailPage from './pages/CarDetail';
 import ExpensesPage from './pages/Expenses';
 import InsurancePage from './pages/Insurance';
 import CarteaVerdePage from './pages/CarteaVerde';
@@ -16,6 +17,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<DashboardPage />} />
           <Route path="garage" element={<GaragePage />} />
+          <Route path="garage/:id" element={<CarDetailPage />} />
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="insurance" element={<InsurancePage />} />
           <Route path="cartea-verde" element={<CarteaVerdePage />} />
