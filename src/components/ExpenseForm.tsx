@@ -1,6 +1,14 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode, type ComponentType, type SVGProps } from 'react';
 import toast from 'react-hot-toast';
 import { Modal } from './Modal';
+import {
+  FuelPumpIcon,
+  BoltIcon,
+  WrenchIcon,
+  CogwheelIcon,
+  ShieldIcon,
+  SparkleIcon,
+} from '../assets/icons';
 import { useCarsStore } from '../stores/carsStore';
 import { useExpensesStore } from '../stores/expensesStore';
 import { todayISO } from '../lib/format';
@@ -32,12 +40,14 @@ const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   other: 'Other',
 };
 
-const CATEGORY_ICON: Record<ExpenseCategory, string> = {
-  fuel: '⛽',
-  repair: '🔧',
-  parts: '🔩',
-  inspection: '🛡',
-  other: '✦',
+type Icon = ComponentType<SVGProps<SVGSVGElement>>;
+
+const CATEGORY_ICON: Record<ExpenseCategory, Icon> = {
+  fuel: FuelPumpIcon,
+  repair: WrenchIcon,
+  parts: CogwheelIcon,
+  inspection: ShieldIcon,
+  other: SparkleIcon,
 };
 
 type FuelField = 'fuelQuantity' | 'fuelUnitPrice' | 'cost';
@@ -314,9 +324,17 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
         const priceLabel = isElectric ? 'Price / kWh' : 'Price / L';
         return (
           <>
-            <p className="text-xs text-ink-subtle">
-              {isElectric ? '⚡ Electric — fill any two of kWh, price/kWh, total. The third auto-fills.'
-                : '⛽ Combustion — fill any two of liters, price/L, total. The third auto-fills.'}
+            <p className="flex items-center gap-1.5 text-xs text-ink-subtle">
+              {isElectric ? (
+                <BoltIcon aria-hidden width={14} height={14} />
+              ) : (
+                <FuelPumpIcon aria-hidden width={14} height={14} />
+              )}
+              <span>
+                {isElectric
+                  ? 'Electric — fill any two of kWh, price/kWh, total. The third auto-fills.'
+                  : 'Combustion — fill any two of liters, price/L, total. The third auto-fills.'}
+              </span>
             </p>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <label>
@@ -468,6 +486,7 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
           <div role="tablist" className="grid grid-cols-5 gap-2">
             {(Object.keys(CATEGORY_LABEL) as ExpenseCategory[]).map((cat) => {
               const active = form.category === cat;
+              const CatIcon = CATEGORY_ICON[cat];
               return (
                 <button
                   type="button"
@@ -481,9 +500,7 @@ export function ExpenseForm({ open, onClose, expense, defaultCarId }: ExpenseFor
                       : 'border-border bg-surface-muted text-ink-muted hover:border-brand/40'
                   }`}
                 >
-                  <span aria-hidden className="text-lg">
-                    {CATEGORY_ICON[cat]}
-                  </span>
+                  <CatIcon aria-hidden width={20} height={20} />
                   {CATEGORY_LABEL[cat]}
                 </button>
               );

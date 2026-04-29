@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { Modal } from './Modal';
 import { PhotoUpload } from './PhotoUpload';
 import { useCarsStore } from '../stores/carsStore';
+import { FuelPumpIcon, BoltIcon } from '../assets/icons';
 import type { Car, CarInput } from '../lib/types';
 
 interface CarFormProps {
@@ -193,10 +194,11 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
           <span className="label">Powertrain</span>
           <div role="tablist" className="grid grid-cols-2 gap-2">
             {([
-              { id: false, label: 'Combustion', icon: '⛽', hint: 'Petrol / diesel / hybrid' },
-              { id: true, label: 'Electric', icon: '⚡', hint: 'Battery EV — charged in kWh' },
+              { id: false, label: 'Combustion', Icon: FuelPumpIcon, hint: 'Petrol / diesel / hybrid' },
+              { id: true, label: 'Electric', Icon: BoltIcon, hint: 'Battery EV — charged in kWh' },
             ] as const).map((opt) => {
               const active = form.isElectric === opt.id;
+              const Icon = opt.Icon;
               return (
                 <button
                   type="button"
@@ -210,9 +212,7 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
                       : 'border-border bg-surface-muted text-ink-muted hover:border-brand/40'
                   }`}
                 >
-                  <span aria-hidden className="text-lg">
-                    {opt.icon}
-                  </span>
+                  <Icon aria-hidden width={22} height={22} />
                   <span className="flex flex-col">
                     <span className="font-medium">{opt.label}</span>
                     <span className="text-xs text-ink-subtle">{opt.hint}</span>
