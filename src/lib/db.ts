@@ -61,9 +61,9 @@ export function getDB(): Promise<IDBPDatabase<CarTrackDB>> {
           const carStore = tx.objectStore('cars');
           carStore.openCursor().then(async function walkCars(cursor): Promise<void> {
             if (!cursor) return;
-            const car = cursor.value as Record<string, unknown>;
+            const car = cursor.value as unknown as Record<string, unknown>;
             if (typeof car.isElectric !== 'boolean') {
-              await cursor.update({ ...car, isElectric: false });
+              await cursor.update({ ...car, isElectric: false } as unknown as Car);
             }
             const next = await cursor.continue();
             return walkCars(next);
@@ -72,7 +72,7 @@ export function getDB(): Promise<IDBPDatabase<CarTrackDB>> {
           const expStore = tx.objectStore('expenses');
           expStore.openCursor().then(async function walkExpenses(cursor): Promise<void> {
             if (!cursor) return;
-            const e = cursor.value as Record<string, unknown>;
+            const e = cursor.value as unknown as Record<string, unknown>;
             if (e.category === 'fuel' && (e.liters !== undefined || e.pricePerLiter !== undefined)) {
               const { liters, pricePerLiter, ...rest } = e as {
                 liters?: number;
@@ -84,7 +84,7 @@ export function getDB(): Promise<IDBPDatabase<CarTrackDB>> {
                 unit: 'L',
                 quantity: typeof liters === 'number' ? liters : 0,
                 unitPrice: typeof pricePerLiter === 'number' ? pricePerLiter : 0,
-              });
+              } as unknown as Expense);
             }
             const next = await cursor.continue();
             return walkExpenses(next);
