@@ -52,12 +52,13 @@ export function SpendDonut({ data }: SpendDonutProps) {
               </Pie>
               <Tooltip
                 cursor={{ fill: 'rgb(var(--surface-muted))' }}
+                wrapperStyle={{ zIndex: 50, outline: 'none' }}
                 contentStyle={{
                   background: 'rgb(var(--surface-raised))',
                   border: '1px solid rgb(var(--border))',
                   borderRadius: 12,
                   color: 'rgb(var(--ink))',
-                  fontSize: 12,
+                  fontSize: 12
                 }}
                 formatter={(value, name) => [formatMoney(Number(value)), name]}
               />
