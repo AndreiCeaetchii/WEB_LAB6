@@ -27,10 +27,15 @@ const CATEGORY_ICON: Record<Expense['category'], string> = {
   other: '✦',
 };
 
+function iconFor(e: Expense): string {
+  if (e.category === 'fuel' && e.unit === 'kWh') return '⚡';
+  return CATEGORY_ICON[e.category];
+}
+
 function describe(e: Expense): string {
   switch (e.category) {
     case 'fuel':
-      return `${e.liters.toLocaleString()} L · ${formatMoney(e.pricePerLiter)} / L${
+      return `${e.quantity.toLocaleString()} ${e.unit} · ${formatMoney(e.unitPrice)} / ${e.unit}${
         e.odometerKm !== undefined ? ` · ${e.odometerKm.toLocaleString()} km` : ''
       }`;
     case 'repair':
@@ -67,7 +72,7 @@ export function ExpenseRow({ expense, car, onEdit, onDelete }: ExpenseRowProps) 
           background: 'rgb(var(--car-accent) / 0.12)',
         }}
       >
-        {CATEGORY_ICON[expense.category]}
+        {iconFor(expense)}
       </span>
 
       <div className="min-w-0 flex-1">

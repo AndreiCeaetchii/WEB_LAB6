@@ -21,6 +21,7 @@ interface FormState {
   year: string;
   vin: string;
   licensePlate: string;
+  isElectric: boolean;
   photo?: Blob;
 }
 
@@ -30,6 +31,7 @@ const initialState: FormState = {
   year: String(CURRENT_YEAR),
   vin: '',
   licensePlate: '',
+  isElectric: false,
 };
 
 function fromCar(car: Car): FormState {
@@ -39,6 +41,7 @@ function fromCar(car: Car): FormState {
     year: String(car.year),
     vin: car.vin,
     licensePlate: car.licensePlate,
+    isElectric: car.isElectric,
     photo: car.photo,
   };
 }
@@ -83,6 +86,7 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
       year: Number(form.year),
       vin: form.vin,
       licensePlate: form.licensePlate,
+      isElectric: form.isElectric,
       photo: form.photo,
     };
     setSubmitting(true);
@@ -184,6 +188,40 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
             maxLength={32}
           />
         </label>
+
+        <div>
+          <span className="label">Powertrain</span>
+          <div role="tablist" className="grid grid-cols-2 gap-2">
+            {([
+              { id: false, label: 'Combustion', icon: '⛽', hint: 'Petrol / diesel / hybrid' },
+              { id: true, label: 'Electric', icon: '⚡', hint: 'Battery EV — charged in kWh' },
+            ] as const).map((opt) => {
+              const active = form.isElectric === opt.id;
+              return (
+                <button
+                  type="button"
+                  key={String(opt.id)}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => set('isElectric', opt.id)}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-sm transition-colors ${
+                    active
+                      ? 'border-brand bg-brand/10 text-brand'
+                      : 'border-border bg-surface-muted text-ink-muted hover:border-brand/40'
+                  }`}
+                >
+                  <span aria-hidden className="text-lg">
+                    {opt.icon}
+                  </span>
+                  <span className="flex flex-col">
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="text-xs text-ink-subtle">{opt.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </form>
     </Modal>
   );
