@@ -2,31 +2,53 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { CarForm } from '../components/CarForm';
-import { StarIcon } from '../components/icons';
+import { ExpenseForm } from '../components/ExpenseForm';
+import { ExpenseRow } from '../components/ExpenseRow';
+import { PlusIcon, StarIcon } from '../components/icons';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
 import { useObjectUrl } from '../lib/useObjectUrl';
+import { formatMoney } from '../lib/format';
 import { useCarsStore } from '../stores/carsStore';
+import { useExpensesStore } from '../stores/expensesStore';
+import type { Expense } from '../lib/types';
 
 export default function CarDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const loaded = useCarsStore((s) => s.loaded);
-  const load = useCarsStore((s) => s.load);
+  const carsLoaded = useCarsStore((s) => s.loaded);
+  const loadCars = useCarsStore((s) => s.load);
   const remove = useCarsStore((s) => s.remove);
   const toggleFavorite = useCarsStore((s) => s.toggleFavorite);
   const car = useCarsStore((s) => s.getById(id));
 
+  const expenses = useExpensesStore((s) => s.expenses);
+  const expensesLoaded = useExpensesStore((s) => s.loaded);
+  const loadExpenses = useExpensesStore((s) => s.load);
+  const removeExpense = useExpensesStore((s) => s.remove);
+
   const [editOpen, setEditOpen] = useState(false);
+  const [expenseFormOpen, setExpenseFormOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const photoUrl = useObjectUrl(car?.photo);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadCars();
+    void loadExpenses();
+  }, [loadCars, loadExpenses]);
 
   const accent = useMemo(() => (car ? getAccent(car.accentId) : undefined), [car]);
   const accentRgb = useMemo(() => (accent ? hexToRgbTuple(accent.hex) : '14 116 144'), [accent]);
 
-  if (loaded && !car) {
+  const carExpenses = useMemo(
+    () => expenses.filter((e) => e.carId === id),
+    [expenses, id],
+  );
+  const total = useMemo(
+    () => carExpenses.reduce((sum, e) => sum + (Number(e.cost) || 0), 0),
+    [carExpenses],
+  );
+
+  if (carsLoaded && !car) {
     return (
       <div className="card mx-auto max-w-md p-8 text-center">
         <h1 className="text-xl font-semibold">Car not found</h1>
@@ -45,9 +67,27 @@ export default function CarDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Remove ${car.make} ${car.model}? This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Remove ${car.make} ${car.model}? This will also delete all expenses recorded against this car.`,
+      )
+    )
+      return;
     await remove(car.id);
     navigate('/garage');
+  };
+
+  const handleAddExpense = () => {
+    setEditingExpense(undefined);
+    setExpenseFormOpen(true);
+  };
+  const handleEditExpense = (e: Expense) => {
+    setEditingExpense(e);
+    setExpenseFormOpen(true);
+  };
+  const handleDeleteExpense = async (e: Expense) => {
+    if (!confirm('Remove this expense?')) return;
+    await removeExpense(e.id);
   };
 
   return (
@@ -124,20 +164,62 @@ export default function CarDetailPage() {
               <dd className="mt-1 font-mono text-sm">{car.vin || '—'}</dd>
             </div>
             <div className="col-span-2">
-              <dt className="text-xs uppercase tracking-wide text-ink-subtle">Added</dt>
-              <dd className="mt-1 text-sm text-ink-muted">
-                {new Date(car.createdAt).toLocaleString()}
+              <dt className="text-xs uppercase tracking-wide text-ink-subtle">Total spent</dt>
+              <dd
+                className="mt-1 font-display text-2xl font-medium tabular-nums"
+                style={{ color: 'rgb(var(--car-accent))' }}
+              >
+                {expensesLoaded ? formatMoney(total) : '—'}
               </dd>
+              <p className="mt-1 text-xs text-ink-subtle">
+                {carExpenses.length} expense{carExpenses.length === 1 ? '' : 's'} recorded
+              </p>
             </div>
           </dl>
-          <p className="text-xs text-ink-muted">
-            Expenses and document tabs land in the next PRs — once they ship, this page becomes the
-            single-car drilldown.
-          </p>
         </div>
       </div>
 
+      <section className="mt-8">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-2xl font-medium tracking-tight">Expenses</h2>
+            <p className="text-sm text-ink-muted">
+              Fuel, repairs, parts, and inspection records for this car.
+            </p>
+          </div>
+          <button type="button" onClick={handleAddExpense} className="btn-primary">
+            <PlusIcon className="h-4 w-4" />
+            Record expense
+          </button>
+        </div>
+        {!expensesLoaded ? (
+          <div className="card grid place-items-center p-8 text-ink-muted">Loading…</div>
+        ) : carExpenses.length === 0 ? (
+          <div className="card p-8 text-center text-sm text-ink-muted">
+            No expenses recorded for this car yet.
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {carExpenses.map((e) => (
+              <ExpenseRow
+                key={e.id}
+                expense={e}
+                car={car}
+                onEdit={() => handleEditExpense(e)}
+                onDelete={() => handleDeleteExpense(e)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
       <CarForm open={editOpen} onClose={() => setEditOpen(false)} car={car} />
+      <ExpenseForm
+        open={expenseFormOpen}
+        onClose={() => setExpenseFormOpen(false)}
+        expense={editingExpense}
+        defaultCarId={car.id}
+      />
     </div>
   );
 }
