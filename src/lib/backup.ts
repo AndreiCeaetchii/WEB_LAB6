@@ -72,41 +72,50 @@ export async function restoreBackup(backup: CarTrackBackup): Promise<{
     );
   }
 
+  const cars = await Promise.all(
+    (backup.cars ?? []).map(async (carRow) => {
+      const { photo, ...rest } = carRow;
+      return {
+        ...rest,
+        photo: photo ? await base64ToBlob(photo) : undefined,
+      } as Car;
+    }),
+  );
+
+  const documents = await Promise.all(
+    (backup.documents ?? []).map(async (docRow) => {
+      const { photos, ...rest } = docRow;
+      return {
+        ...rest,
+        photos: await Promise.all(
+          (photos ?? []).map((b64) => base64ToBlob(b64)),
+        ),
+      } as VehicleDocument;
+    }),
+  );
+
+  const expenses = backup.expenses ?? [];
+
   const db = await getDB();
   const tx = db.transaction(['cars', 'expenses', 'documents'], 'readwrite');
-  await Promise.all([
-    tx.objectStore('cars').clear(),
-    tx.objectStore('expenses').clear(),
-    tx.objectStore('documents').clear(),
-  ]);
+  tx.objectStore('cars').clear();
+  tx.objectStore('expenses').clear();
+  tx.objectStore('documents').clear();
 
-  for (const carRow of backup.cars ?? []) {
-    const { photo, ...rest } = carRow;
-    const car: Car = {
-      ...rest,
-      photo: photo ? await base64ToBlob(photo) : undefined,
-    };
-    await tx.objectStore('cars').put(car);
-  }
-  for (const e of backup.expenses ?? []) {
-    await tx.objectStore('expenses').put(e);
-  }
-  for (const docRow of backup.documents ?? []) {
-    const { photos, ...rest } = docRow;
-    const doc: VehicleDocument = {
-      ...rest,
-      photos: await Promise.all(
-        (photos ?? []).map((b64) => base64ToBlob(b64)),
-      ),
-    };
-    await tx.objectStore('documents').put(doc);
-  }
+  const carStore = tx.objectStore('cars');
+  const expenseStore = tx.objectStore('expenses');
+  const documentStore = tx.objectStore('documents');
+
+  cars.forEach((car) => carStore.put(car));
+  expenses.forEach((expense) => expenseStore.put(expense));
+  documents.forEach((doc) => documentStore.put(doc));
+
   await tx.done;
 
   return {
-    cars: backup.cars?.length ?? 0,
-    expenses: backup.expenses?.length ?? 0,
-    documents: backup.documents?.length ?? 0,
+    cars: cars.length,
+    expenses: expenses.length,
+    documents: documents.length,
   };
 }
 
