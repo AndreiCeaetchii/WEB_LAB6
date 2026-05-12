@@ -1,7 +1,13 @@
+using CarTrack.Application.Interfaces;
+using CarTrack.Application.Services;
+using CarTrack.Domain.Interfaces;
+using CarTrack.Infrastructure.Auth;
 using CarTrack.Infrastructure.Persistence;
+using CarTrack.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace CarTrack.Infrastructure;
 
@@ -19,6 +25,14 @@ public static class DependencyInjection
                 .UseNpgsql(connectionString,
                     npgsql => npgsql.MigrationsAssembly("CarTrack.Infrastructure"))
                 .UseSnakeCaseNamingConvention());
+
+        var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()
+            ?? throw new InvalidOperationException("Jwt config section is required");
+        services.AddSingleton(jwtSettings);
+
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

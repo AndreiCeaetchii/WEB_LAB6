@@ -6,4 +6,5 @@ public interface ITokenService
     string GenerateRefreshToken();
     string HashToken(string token);
     (Guid userId, string email, string role) ValidateAccessToken(string token);
+    int RefreshTokenDays { get; }
 }
