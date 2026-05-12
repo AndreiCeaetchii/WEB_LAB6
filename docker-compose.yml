@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cartrack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cartrack}
+      POSTGRES_USER: ${POSTGRES_USER:-cartrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cartrack} -d ${POSTGRES_DB:-cartrack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: cartrack-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: cartrack-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+        mc mb --ignore-existing local/${MINIO_BUCKET:-cartrack-prod} &&
+        echo 'MinIO bucket ready'
+      "
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: CarTrack.API/Dockerfile
+    container_name: cartrack-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-cartrack};Username=${POSTGRES_USER:-cartrack};Password=${POSTGRES_PASSWORD}"
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: cartrack-api
+      Jwt__Audience: cartrack-app
+      Jwt__AccessTokenMinutes: 1
+      Jwt__RefreshTokenDays: 7
+      Minio__Endpoint: minio:9000
+      Minio__AccessKey: ${MINIO_ROOT_USER}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Minio__Bucket: ${MINIO_BUCKET:-cartrack-prod}
+      Minio__UseSSL: "false"
+      Minio__PublicEndpoint: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      Cors__AllowedOrigins: ${FRONTEND_ORIGIN:-http://localhost:8082}
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8090}:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: cartrack-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-8082}:80"
+
+volumes:
+  postgres_data:
+  minio_data:

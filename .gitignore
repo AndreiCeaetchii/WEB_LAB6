@@ -20,7 +20,6 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
 
 # Playwright
@@ -29,3 +28,21 @@ test-results/
 
 # Local screenshots
 cartrack-pr*-*.png
+
+# .NET build artifacts
+backend/*/bin/
+backend/*/obj/
+backend/**/.vs/
+backend/*.user
+*.user
+
+# EF Core migration preview (temp file)
+migration-preview.sql
+
+# Local env — only .env.example is committed
+.env
+
+# Claude Code internals (plans, specs, memory)
+.claude/
+docs/superpowers/
+MEMORY.md
