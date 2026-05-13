@@ -54,7 +54,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       ...input,
       id: newId(),
       cost: Number(input.cost) || 0,
-      photos: input.photos ?? [],
+      photoUrls: [], // Task 6 will populate from presigned upload
       createdAt: now,
       updatedAt: now,
     };
@@ -74,7 +74,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     const next: VehicleDocument = {
       ...existing,
       ...patch,
-      photos: patch.photos !== undefined ? patch.photos : existing.photos,
+      photoUrls: existing.photoUrls, // Task 6 will handle photo updates
       updatedAt: Date.now(),
     };
     await db.put('documents', next);

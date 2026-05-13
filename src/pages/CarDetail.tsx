@@ -8,7 +8,6 @@ import { DocumentForm } from '../components/DocumentForm';
 import { DocumentRow } from '../components/DocumentRow';
 import { PlusIcon, StarIcon } from '../components/icons';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
-import { useObjectUrl } from '../lib/useObjectUrl';
 import { formatMoney } from '../lib/format';
 import { useCarsStore } from '../stores/carsStore';
 import { useExpensesStore } from '../stores/expensesStore';
@@ -32,7 +31,6 @@ export default function CarDetailPage() {
   const documents = useDocumentsStore((s) => s.documents);
   const loadDocuments = useDocumentsStore((s) => s.load);
   const removeDocument = useDocumentsStore((s) => s.remove);
-  const updateDocument = useDocumentsStore((s) => s.update);
 
   const [editOpen, setEditOpen] = useState(false);
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
@@ -41,7 +39,7 @@ export default function CarDetailPage() {
   const [editingDocument, setEditingDocument] =
     useState<VehicleDocument | undefined>();
   const [docFormKind, setDocFormKind] = useState<DocumentKind>('rca');
-  const photoUrl = useObjectUrl(car?.photo);
+  const photoUrl = car?.photoUrls[0];
 
   useEffect(() => {
     void loadCars();
@@ -121,11 +119,12 @@ export default function CarDetailPage() {
     if (!confirm('Remove this document and its photos?')) return;
     await removeDocument(doc.id);
   };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDocumentPhotosChange = async (
-    doc: VehicleDocument,
-    photos: Blob[],
+    _doc: VehicleDocument,
+    _photos: Blob[],
   ) => {
-    await updateDocument(doc.id, { photos });
+    // TODO Task 6: implement photo update via presigned URL
   };
 
   return (

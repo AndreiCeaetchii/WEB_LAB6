@@ -1,5 +1,4 @@
 import { getDB } from './db';
-import { base64ToBlob, blobToBase64 } from './photos';
 import type { Car, Expense, VehicleDocument } from './types';
 
 export const BACKUP_VERSION = 1;
@@ -7,9 +6,9 @@ export const BACKUP_VERSION = 1;
 export interface CarTrackBackup {
   version: number;
   exportedAt: string;
-  cars: Array<Omit<Car, 'photo'> & { photo?: string }>;
+  cars: Car[];
   expenses: Expense[];
-  documents: Array<Omit<VehicleDocument, 'photos'> & { photos: string[] }>;
+  documents: VehicleDocument[];
 }
 
 export async function buildBackup(): Promise<CarTrackBackup> {
@@ -20,26 +19,12 @@ export async function buildBackup(): Promise<CarTrackBackup> {
     db.getAll('documents'),
   ]);
 
-  const carsOut = await Promise.all(
-    cars.map(async (c) => ({
-      ...c,
-      photo: c.photo ? await blobToBase64(c.photo) : undefined,
-    })),
-  );
-
-  const documentsOut = await Promise.all(
-    documents.map(async (d) => ({
-      ...d,
-      photos: await Promise.all(d.photos.map((b) => blobToBase64(b))),
-    })),
-  );
-
   return {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    cars: carsOut,
+    cars,
     expenses,
-    documents: documentsOut,
+    documents,
   };
 }
 
@@ -72,27 +57,9 @@ export async function restoreBackup(backup: CarTrackBackup): Promise<{
     );
   }
 
-  const cars = await Promise.all(
-    (backup.cars ?? []).map(async (carRow) => {
-      const { photo, ...rest } = carRow;
-      return {
-        ...rest,
-        photo: photo ? await base64ToBlob(photo) : undefined,
-      } as Car;
-    }),
-  );
+  const cars = (backup.cars ?? []) as Car[];
 
-  const documents = await Promise.all(
-    (backup.documents ?? []).map(async (docRow) => {
-      const { photos, ...rest } = docRow;
-      return {
-        ...rest,
-        photos: await Promise.all(
-          (photos ?? []).map((b64) => base64ToBlob(b64)),
-        ),
-      } as VehicleDocument;
-    }),
-  );
+  const documents = (backup.documents ?? []) as VehicleDocument[];
 
   const expenses = backup.expenses ?? [];
 

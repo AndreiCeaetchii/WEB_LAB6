@@ -37,7 +37,6 @@ export function DocumentList({ kind, title, description }: DocumentListProps) {
   const docsLoaded = useDocumentsStore((s) => s.loaded);
   const loadDocs = useDocumentsStore((s) => s.load);
   const remove = useDocumentsStore((s) => s.remove);
-  const update = useDocumentsStore((s) => s.update);
 
   useEffect(() => {
     void loadCars();
@@ -79,8 +78,9 @@ export function DocumentList({ kind, title, description }: DocumentListProps) {
     await remove(doc.id);
   };
 
-  const handlePhotosChange = async (doc: VehicleDocument, photos: Blob[]) => {
-    await update(doc.id, { photos });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handlePhotosChange = async (_doc: VehicleDocument, _photos: Blob[]) => {
+    // TODO Task 6: implement photo update via presigned URL
   };
 
   const ready = carsLoaded && docsLoaded;

@@ -43,7 +43,7 @@ function fromCar(car: Car): FormState {
     vin: car.vin,
     licensePlate: car.licensePlate,
     isElectric: car.isElectric,
-    photo: car.photo,
+    // photo field remains undefined — Task 4 will properly handle this
   };
 }
 
@@ -81,15 +81,15 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
       toast.error(err);
       return;
     }
-    const input: CarInput = {
+    // accentId is auto-assigned in the store; cast omits it here (Task 4 will pass photo)
+    const input = {
       make: form.make,
       model: form.model,
       year: Number(form.year),
       vin: form.vin,
       licensePlate: form.licensePlate,
       isElectric: form.isElectric,
-      photo: form.photo,
-    };
+    } as CarInput;
     setSubmitting(true);
     try {
       if (car) await update(car.id, input);

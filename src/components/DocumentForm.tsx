@@ -51,7 +51,7 @@ function fromDoc(d: VehicleDocument): FormState {
     endDate: d.endDate,
     cost: String(d.cost),
     note: d.note ?? '',
-    photos: [...d.photos],
+    photos: [], // temporary — Task 6 will replace this properly
   };
 }
 
@@ -107,7 +107,7 @@ export function DocumentForm({
         endDate: form.endDate,
         cost: Number(form.cost) || 0,
         note: form.note.trim() || undefined,
-        photos: form.photos,
+        // photos omitted — Task 6 will handle photo upload via presigned URL
       };
       if (document) await update(document.id, input);
       else await add(input);

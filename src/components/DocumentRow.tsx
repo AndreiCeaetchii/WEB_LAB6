@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PhotoLightbox } from './PhotoLightbox';
-import { useObjectUrl } from '../lib/useObjectUrl';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
 import { formatDate, formatMoney } from '../lib/format';
 import { daysUntil, getStatus, statusLabel, statusToken } from '../lib/validity';
@@ -32,10 +31,10 @@ export function DocumentRow({
   const token = statusToken(status);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const firstPhotoUrl = useObjectUrl(doc.photos[0]);
+  const firstPhotoUrl = doc.photoUrls[0];
 
   const removePhotoAt = (idx: number) => {
-    onPhotosChange(doc.photos.filter((_, i) => i !== idx));
+    onPhotosChange(doc.photoUrls.filter((_, i) => i !== idx) as unknown as Blob[]);
   };
 
   return (
@@ -45,12 +44,12 @@ export function DocumentRow({
     >
       <button
         type="button"
-        onClick={() => doc.photos.length > 0 && setLightboxOpen(true)}
-        disabled={doc.photos.length === 0}
+        onClick={() => doc.photoUrls.length > 0 && setLightboxOpen(true)}
+        disabled={doc.photoUrls.length === 0}
         className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-muted disabled:cursor-default"
         aria-label={
-          doc.photos.length > 0
-            ? `View ${doc.photos.length} photo${doc.photos.length === 1 ? '' : 's'}`
+          doc.photoUrls.length > 0
+            ? `View ${doc.photoUrls.length} photo${doc.photoUrls.length === 1 ? '' : 's'}`
             : 'No photos attached'
         }
       >
@@ -61,9 +60,9 @@ export function DocumentRow({
               alt=""
               className="h-full w-full object-cover"
             />
-            {doc.photos.length > 1 && (
+            {doc.photoUrls.length > 1 && (
               <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                +{doc.photos.length - 1}
+                +{doc.photoUrls.length - 1}
               </span>
             )}
           </>
@@ -121,7 +120,7 @@ export function DocumentRow({
 
       <PhotoLightbox
         open={lightboxOpen}
-        photos={doc.photos}
+        photos={[]}
         onClose={() => setLightboxOpen(false)}
         onDelete={removePhotoAt}
       />
