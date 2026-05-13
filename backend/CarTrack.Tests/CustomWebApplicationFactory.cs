@@ -39,6 +39,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 d => d.ServiceType == typeof(IStorageService));
             if (storageDescriptor != null) services.Remove(storageDescriptor);
             services.AddSingleton<IStorageService, FakeStorageService>();
+
+            // Ensure in-memory database is created with seed data
+            var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureCreated();
         });
     }
 }

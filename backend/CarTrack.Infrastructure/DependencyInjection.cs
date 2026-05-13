@@ -47,6 +47,9 @@ public static class DependencyInjection
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IDocumentService, DocumentService>();
 
+        services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<IAdminService, AdminService>();
+
         return services;
     }
 }
