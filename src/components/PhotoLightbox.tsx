@@ -1,22 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useObjectUrl } from '../lib/useObjectUrl';
 
 interface PhotoLightboxProps {
   open: boolean;
-  photos: Blob[];
+  photos: string[];
   startIndex?: number;
   onClose: () => void;
-  onDelete?: (index: number) => void;
-}
-
-interface SlideProps {
-  blob: Blob;
-}
-
-function Slide({ blob }: SlideProps) {
-  const url = useObjectUrl(blob);
-  if (!url) return null;
-  return <img src={url} alt="Document" className="max-h-full max-w-full object-contain" />;
+  onDelete?: (photoUrl: string) => void;
 }
 
 export function PhotoLightbox({
@@ -30,7 +19,6 @@ export function PhotoLightbox({
 
   useEffect(() => {
     if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndex(Math.min(startIndex, Math.max(0, photos.length - 1)));
   }, [open, startIndex, photos.length]);
 
@@ -39,8 +27,7 @@ export function PhotoLightbox({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') setIndex((i) => Math.max(0, i - 1));
-      if (e.key === 'ArrowRight')
-        setIndex((i) => Math.min(photos.length - 1, i + 1));
+      if (e.key === 'ArrowRight') setIndex((i) => Math.min(photos.length - 1, i + 1));
     };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -53,7 +40,7 @@ export function PhotoLightbox({
   if (!open || photos.length === 0) return null;
 
   const safeIndex = Math.min(index, photos.length - 1);
-  const blob = photos[safeIndex];
+  const photoUrl = photos[safeIndex];
 
   return (
     <div
@@ -70,9 +57,7 @@ export function PhotoLightbox({
           {onDelete && (
             <button
               type="button"
-              onClick={() => {
-                if (confirm('Delete this photo?')) onDelete(safeIndex);
-              }}
+              onClick={() => { if (confirm('Delete this photo?')) onDelete(photoUrl); }}
               className="rounded-xl border border-white/20 px-3 py-1 text-sm hover:bg-white/10"
             >
               Delete photo
@@ -90,7 +75,7 @@ export function PhotoLightbox({
       </header>
 
       <div className="grid place-items-center px-6 pb-6">
-        <Slide blob={blob} />
+        <img src={photoUrl} alt="Document" className="max-h-full max-w-full object-contain" />
       </div>
 
       <footer className="flex items-center justify-center gap-3 pb-6 text-white">

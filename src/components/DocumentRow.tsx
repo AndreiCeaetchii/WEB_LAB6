@@ -11,31 +11,17 @@ interface DocumentRowProps {
   car?: Car;
   onEdit: () => void;
   onDelete: () => void;
-  onPhotosChange: (photos: Blob[]) => void;
+  onPhotoRemove: (url: string) => void;
 }
 
-export function DocumentRow({
-  document: doc,
-  car,
-  onEdit,
-  onDelete,
-  onPhotosChange,
-}: DocumentRowProps) {
+export function DocumentRow({ document: doc, car, onEdit, onDelete, onPhotoRemove }: DocumentRowProps) {
   const accent = useMemo(() => (car ? getAccent(car.accentId) : undefined), [car]);
-  const accentRgb = useMemo(
-    () => (accent ? hexToRgbTuple(accent.hex) : '14 116 144'),
-    [accent],
-  );
+  const accentRgb = useMemo(() => (accent ? hexToRgbTuple(accent.hex) : '14 116 144'), [accent]);
   const status = useMemo(() => getStatus(doc.endDate), [doc.endDate]);
   const days = useMemo(() => daysUntil(doc.endDate), [doc.endDate]);
   const token = statusToken(status);
-
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const firstPhotoUrl = doc.photoUrls[0];
-
-  const removePhotoAt = (idx: number) => {
-    onPhotosChange(doc.photoUrls.filter((_, i) => i !== idx) as unknown as Blob[]);
-  };
 
   return (
     <article
@@ -55,11 +41,7 @@ export function DocumentRow({
       >
         {firstPhotoUrl ? (
           <>
-            <img
-              src={firstPhotoUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            <img src={firstPhotoUrl} alt="" className="h-full w-full object-cover" />
             {doc.photoUrls.length > 1 && (
               <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 +{doc.photoUrls.length - 1}
@@ -67,9 +49,7 @@ export function DocumentRow({
             )}
           </>
         ) : (
-          <span className="grid h-full w-full place-items-center text-xs text-ink-subtle">
-            No photo
-          </span>
+          <span className="grid h-full w-full place-items-center text-xs text-ink-subtle">No photo</span>
         )}
       </button>
 
@@ -77,12 +57,8 @@ export function DocumentRow({
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="font-medium">{doc.insurer || 'Untitled insurer'}</span>
           {car ? (
-            <Link
-              to={`/garage/${car.id}`}
-              className="text-sm text-ink-muted hover:underline"
-            >
-              {car.make} {car.model}
-              {car.licensePlate ? ` · ${car.licensePlate}` : ''}
+            <Link to={`/garage/${car.id}`} className="text-sm text-ink-muted hover:underline">
+              {car.make} {car.model}{car.licensePlate ? ` · ${car.licensePlate}` : ''}
             </Link>
           ) : (
             <span className="text-sm text-ink-subtle">Unknown car</span>
@@ -103,47 +79,27 @@ export function DocumentRow({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-base font-semibold tabular-nums">
-          {formatMoney(doc.cost)}
-        </span>
-        <button type="button" onClick={onEdit} className="btn-ghost">
-          Edit
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="btn-ghost text-danger hover:bg-danger/10"
-        >
+        <span className="text-base font-semibold tabular-nums">{formatMoney(doc.cost)}</span>
+        <button type="button" onClick={onEdit} className="btn-ghost">Edit</button>
+        <button type="button" onClick={onDelete} className="btn-ghost text-danger hover:bg-danger/10">
           Delete
         </button>
       </div>
 
       <PhotoLightbox
         open={lightboxOpen}
-        photos={[]}
+        photos={doc.photoUrls}
         onClose={() => setLightboxOpen(false)}
-        onDelete={removePhotoAt}
+        onDelete={onPhotoRemove}
       />
     </article>
   );
 }
 
-function StatusPill({
-  status,
-  label,
-}: {
-  status: 'success' | 'warn' | 'danger';
-  label: string;
-}) {
-  const tokenClass = {
-    success: 'bg-success/15 text-success',
-    warn: 'bg-warn/15 text-warn',
-    danger: 'bg-danger/15 text-danger',
-  }[status];
+function StatusPill({ status, label }: { status: 'success' | 'warn' | 'danger'; label: string }) {
+  const tokenClass = { success: 'bg-success/15 text-success', warn: 'bg-warn/15 text-warn', danger: 'bg-danger/15 text-danger' }[status];
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tokenClass}`}
-    >
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tokenClass}`}>
       {label}
     </span>
   );

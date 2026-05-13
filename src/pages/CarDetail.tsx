@@ -119,12 +119,10 @@ export default function CarDetailPage() {
     if (!confirm('Remove this document and its photos?')) return;
     await removeDocument(doc.id);
   };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDocumentPhotosChange = async (
-    _doc: VehicleDocument,
-    _photos: Blob[],
-  ) => {
-    // TODO Task 6: implement photo update via presigned URL
+  const removeDocumentPhoto = useDocumentsStore((s) => s.removePhoto);
+
+  const handleDocumentPhotoRemove = async (doc: VehicleDocument, url: string) => {
+    await removeDocumentPhoto(doc.carId, doc.id, url);
   };
 
   return (
@@ -290,7 +288,7 @@ export default function CarDetailPage() {
                 car={car}
                 onEdit={() => handleEditDocument(d)}
                 onDelete={() => handleDeleteDocument(d)}
-                onPhotosChange={(photos) => handleDocumentPhotosChange(d, photos)}
+                onPhotoRemove={(url) => handleDocumentPhotoRemove(d, url)}
               />
             ))}
           </div>
