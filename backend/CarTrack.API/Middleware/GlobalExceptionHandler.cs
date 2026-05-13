@@ -13,6 +13,7 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
         {
             ConflictException => StatusCodes.Status409Conflict,
             UnauthorizedException => StatusCodes.Status401Unauthorized,
+            ForbiddenException => StatusCodes.Status403Forbidden,
             NotFoundException => StatusCodes.Status404NotFound,
             _ => StatusCodes.Status500InternalServerError
         };

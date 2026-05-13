@@ -4,6 +4,7 @@ using CarTrack.Domain.Interfaces;
 using CarTrack.Infrastructure.Auth;
 using CarTrack.Infrastructure.Persistence;
 using CarTrack.Infrastructure.Persistence.Repositories;
+using CarTrack.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,12 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ICarRepository, CarRepository>();
+        services.AddScoped<ICarService, CarService>();
+
+        var minioSettings = configuration.GetSection("Minio").Get<MinioSettings>() ?? new MinioSettings();
+        services.AddSingleton(minioSettings);
+        services.AddSingleton<IStorageService, MinioStorageService>();
 
         return services;
     }

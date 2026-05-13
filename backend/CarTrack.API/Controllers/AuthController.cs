@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using CarTrack.Application.Dtos.Auth;
 using CarTrack.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -31,5 +32,19 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         await authService.LogoutAsync(refreshToken, ct);
         return NoContent();
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    public IActionResult Me()
+    {
+        // JsonWebTokenHandler (default .NET 8) does not remap claim names.
+        // "sub" stays "sub"; fall back to ClaimTypes.NameIdentifier for older handlers.
+        var sub = User.FindFirstValue("sub")
+               ?? User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var email = User.FindFirstValue("email")
+                 ?? User.FindFirstValue(ClaimTypes.Email)!;
+        var role = User.FindFirstValue(ClaimTypes.Role)!;
+        return Ok(new UserDto(Guid.Parse(sub), email, role));
     }
 }
