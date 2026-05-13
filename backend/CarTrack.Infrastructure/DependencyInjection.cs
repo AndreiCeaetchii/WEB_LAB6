@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ICarRepository, CarRepository>();
 
         var minioSettings = configuration.GetSection("Minio").Get<MinioSettings>() ?? new MinioSettings();
         services.AddSingleton(minioSettings);
