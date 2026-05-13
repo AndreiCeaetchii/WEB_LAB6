@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - run: dotnet restore backend/CarTrack.sln
+      - run: dotnet build backend/CarTrack.sln -c Release --no-restore
+      - run: dotnet test backend/CarTrack.Tests -c Release --no-build
+
+  docker-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f backend/CarTrack.API/Dockerfile backend/ -t cartrack-api:ci
+
+      - name: Build frontend image
+        run: docker build -f nginx/Dockerfile . -t cartrack-frontend:ci
