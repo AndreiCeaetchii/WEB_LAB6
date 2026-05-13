@@ -9,7 +9,6 @@ import type { Car, CarInput } from '../lib/types';
 interface CarFormProps {
   open: boolean;
   onClose: () => void;
-  /** when provided, form is in edit mode */
   car?: Car;
 }
 
@@ -23,7 +22,7 @@ interface FormState {
   vin: string;
   licensePlate: string;
   isElectric: boolean;
-  photo?: Blob;
+  photoBlob?: Blob;
 }
 
 const initialState: FormState = {
@@ -43,7 +42,6 @@ function fromCar(car: Car): FormState {
     vin: car.vin,
     licensePlate: car.licensePlate,
     isElectric: car.isElectric,
-    // photo field remains undefined — Task 4 will properly handle this
   };
 }
 
@@ -55,7 +53,6 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
 
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(car ? fromCar(car) : initialState);
     }
   }, [open, car]);
@@ -67,9 +64,8 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
     if (!form.make.trim()) return 'Make is required';
     if (!form.model.trim()) return 'Model is required';
     const year = Number(form.year);
-    if (!Number.isFinite(year) || year < EARLIEST_YEAR || year > CURRENT_YEAR + 1) {
+    if (!Number.isFinite(year) || year < EARLIEST_YEAR || year > CURRENT_YEAR + 1)
       return `Year must be between ${EARLIEST_YEAR} and ${CURRENT_YEAR + 1}`;
-    }
     if (form.vin && form.vin.trim().length < 5) return 'VIN looks too short';
     return null;
   };
@@ -77,23 +73,21 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const err = validate();
-    if (err) {
-      toast.error(err);
-      return;
-    }
-    // accentId is auto-assigned in the store; cast omits it here (Task 4 will pass photo)
-    const input = {
+    if (err) { toast.error(err); return; }
+    const input: CarInput = {
       make: form.make,
       model: form.model,
       year: Number(form.year),
       vin: form.vin,
       licensePlate: form.licensePlate,
       isElectric: form.isElectric,
-    } as CarInput;
+      accentId: car?.accentId ?? '',
+      favorite: car?.favorite ?? false,
+    };
     setSubmitting(true);
     try {
-      if (car) await update(car.id, input);
-      else await add(input);
+      if (car) await update(car.id, input, form.photoBlob);
+      else await add(input, form.photoBlob);
       onClose();
     } catch (e) {
       console.error(e);
@@ -110,20 +104,13 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
       title={car ? 'Edit car' : 'Add a car'}
       description={
         car
-          ? 'Update your vehicle’s details.'
+          ? "Update your vehicle's details."
           : 'A unique accent color is auto-assigned so the dashboard donut stays readable.'
       }
       footer={
         <>
-          <button type="button" onClick={onClose} className="btn-ghost">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="car-form"
-            disabled={submitting}
-            className="btn-primary"
-          >
+          <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
+          <button type="submit" form="car-form" disabled={submitting} className="btn-primary">
             {submitting ? 'Saving…' : car ? 'Save changes' : 'Add car'}
           </button>
         </>
@@ -133,8 +120,9 @@ export function CarForm({ open, onClose, car }: CarFormProps) {
         <PhotoUpload
           label="Registration document photo"
           hint="Optional — handy if you ever need to show proof of registration."
-          value={form.photo}
-          onChange={(blob) => set('photo', blob)}
+          value={form.photoBlob}
+          currentUrl={car?.photoUrls[0]}
+          onChange={(blob) => set('photoBlob', blob)}
         />
 
         <div className="grid grid-cols-2 gap-3">

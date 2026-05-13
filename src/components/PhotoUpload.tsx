@@ -5,6 +5,7 @@ import { useObjectUrl } from '../lib/useObjectUrl';
 
 interface PhotoUploadProps {
   value?: Blob;
+  currentUrl?: string;
   onChange: (blob: Blob | undefined) => void;
   label?: string;
   hint?: string;
@@ -12,13 +13,15 @@ interface PhotoUploadProps {
 
 export function PhotoUpload({
   value,
+  currentUrl,
   onChange,
   label = 'Photo',
   hint = 'JPEG/PNG/HEIC — compressed to WebP automatically.',
 }: PhotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const previewUrl = useObjectUrl(value);
+  const blobUrl = useObjectUrl(value);
+  const previewUrl = blobUrl ?? currentUrl;
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
@@ -46,11 +49,7 @@ export function PhotoUpload({
           className="relative grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-muted text-xs text-ink-muted transition-colors hover:border-brand hover:text-brand"
         >
           {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Selected"
-              className="h-full w-full object-cover"
-            />
+            <img src={previewUrl} alt="Selected" className="h-full w-full object-cover" />
           ) : busy ? (
             'Compressing…'
           ) : (
