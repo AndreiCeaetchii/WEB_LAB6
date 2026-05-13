@@ -9,6 +9,6 @@ public interface IShareRepository
     Task<CarSharePreview?> GetPreviewAsync(string token, CancellationToken ct = default);
     Task<List<CarShare>> GetActiveByCarIdAsync(Guid carId, CancellationToken ct = default);
     Task AddAsync(CarShare share, CancellationToken ct = default);
-    Task RemoveAsync(CarShare share);
+    Task RemoveAsync(CarShare share, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }
