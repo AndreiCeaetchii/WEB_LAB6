@@ -44,6 +44,9 @@ public static class DependencyInjection
         services.AddScoped<IExpenseRepository, ExpenseRepository>();
         services.AddScoped<IExpenseService, ExpenseService>();
 
+        services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped<IDocumentService, DocumentService>();
+
         return services;
     }
 }
