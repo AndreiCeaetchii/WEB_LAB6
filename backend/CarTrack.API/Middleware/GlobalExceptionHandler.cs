@@ -11,6 +11,7 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
     {
         var statusCode = exception switch
         {
+            BadRequestException => StatusCodes.Status400BadRequest,
             ConflictException => StatusCodes.Status409Conflict,
             UnauthorizedException => StatusCodes.Status401Unauthorized,
             ForbiddenException => StatusCodes.Status403Forbidden,
