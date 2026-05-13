@@ -50,6 +50,8 @@ public static class DependencyInjection
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IAdminService, AdminService>();
 
+        services.AddScoped<IShareRepository, ShareRepository>();
+
         return services;
     }
 }
