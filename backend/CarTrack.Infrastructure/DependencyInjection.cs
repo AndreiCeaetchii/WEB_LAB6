@@ -41,6 +41,9 @@ public static class DependencyInjection
         services.AddSingleton(minioSettings);
         services.AddSingleton<IStorageService, MinioStorageService>();
 
+        services.AddScoped<IExpenseRepository, ExpenseRepository>();
+        services.AddScoped<IExpenseService, ExpenseService>();
+
         return services;
     }
 }
