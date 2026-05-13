@@ -59,6 +59,7 @@ interface DocumentsState {
   byKind: (kind: DocumentKind) => VehicleDocument[];
   byCar: (carId: ID, kind?: DocumentKind) => VehicleDocument[];
   expiringWithin: (days: number) => VehicleDocument[];
+  invalidate: () => void;
 }
 
 export const useDocumentsStore = create<DocumentsState>((set, get) => ({
@@ -161,4 +162,5 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       (d) => d.carId === carId && (kind === undefined || d.kind === kind),
     ),
   expiringWithin: (days) => get().documents.filter((d) => isExpiringWithin(d, days)),
+  invalidate: () => set({ loaded: false }),
 }));

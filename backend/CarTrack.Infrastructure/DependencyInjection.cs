@@ -52,6 +52,8 @@ public static class DependencyInjection
 
         services.AddScoped<IShareRepository, ShareRepository>();
 
+        services.AddScoped<IImportService, ImportService>();
+
         var frontendBaseUrl = configuration["App:FrontendBaseUrl"] ?? "http://localhost:5173";
         services.AddScoped<IShareService>(sp =>
             new ShareService(
