@@ -10,17 +10,22 @@ public class CarRepository(AppDbContext context) : ICarRepository
     public async Task<PaginatedResult<Car>> GetUserCarsAsync(
         Guid userId, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = context.CarUsers
+        var carIds = await context.CarUsers
             .Where(cu => cu.UserId == userId)
-            .Select(cu => cu.Car)
-            .Include(c => c.CarPictures)
-                .ThenInclude(cp => cp.Picture);
+            .Select(cu => cu.CarId)
+            .ToListAsync(ct);
 
-        var total = await query.CountAsync(ct);
-        var items = await query
-            .OrderBy(c => c.CreatedAt)
+        var total = carIds.Count;
+        var pagedIds = carIds
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .ToList();
+
+        var items = await context.Cars
+            .Where(c => pagedIds.Contains(c.Id))
+            .Include(c => c.CarPictures)
+                .ThenInclude(cp => cp.Picture)
+            .OrderBy(c => c.CreatedAt)
             .ToListAsync(ct);
 
         return new PaginatedResult<Car>(items, total, page, pageSize);
