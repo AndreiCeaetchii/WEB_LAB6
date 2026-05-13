@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { StarIcon } from './icons';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
-import { useObjectUrl } from '../lib/useObjectUrl';
 import type { Car } from '../lib/types';
 
 interface CarCardProps {
@@ -15,7 +14,7 @@ interface CarCardProps {
 export function CarCard({ car, onEdit, onDelete, onToggleFavorite }: CarCardProps) {
   const accent = useMemo(() => getAccent(car.accentId), [car.accentId]);
   const accentRgb = useMemo(() => hexToRgbTuple(accent.hex), [accent.hex]);
-  const photoUrl = useObjectUrl(car.photo);
+  const photoUrl = car.photoUrls[0];
 
   return (
     <article

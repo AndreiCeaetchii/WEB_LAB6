@@ -5,8 +5,10 @@ import { ThemeToggle } from './ThemeToggle';
 import { Logo } from './Logo';
 import { QuickAddMenu } from './QuickAddMenu';
 import { QuickAddForms } from './QuickAddForms';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Layout() {
+    const { logout } = useAuth();
     return (
         <div className="flex min-h-screen flex-col bg-surface text-ink">
             <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/80 backdrop-blur">
@@ -17,6 +19,13 @@ export function Layout() {
                     <div className="flex items-center gap-2">
                         <QuickAddMenu />
                         <ThemeToggle />
+                        <button
+                          type="button"
+                          onClick={() => { void logout(); }}
+                          className="btn-ghost hidden text-sm md:inline-flex"
+                        >
+                          Sign out
+                        </button>
                         {/* Hamburger only on phones / tablets */}
                         <div className="md:hidden">
                             <SideNavMenu />

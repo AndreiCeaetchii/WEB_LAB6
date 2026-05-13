@@ -13,18 +13,15 @@ export interface Car {
   year: number;
   vin: string;
   licensePlate: string;
-  /** Accent palette slot id, auto-assigned (see lib/palette.ts). */
   accentId: string;
-  /** Compressed registration photo, optional. */
-  photo?: Blob;
-  /** True for battery-electric cars; drives fuel-vs-charge UI on expense entry. */
+  photoUrls: string[];
   isElectric: boolean;
   favorite: boolean;
   createdAt: number;
   updatedAt: number;
 }
 
-export type CarInput = Omit<Car, 'id' | 'createdAt' | 'updatedAt' | 'accentId' | 'favorite'> & {
+export type CarInput = Omit<Car, 'id' | 'createdAt' | 'updatedAt' | 'photoUrls'> & {
   favorite?: boolean;
 };
 
@@ -33,26 +30,19 @@ export type ExpenseCategory = 'fuel' | 'repair' | 'parts' | 'inspection' | 'othe
 interface ExpenseBase {
   id: ID;
   carId: ID;
-  /** ISO date (yyyy-mm-dd) — date the expense actually happened. */
   date: string;
-  /** Total amount paid in MDL (or whatever the user inputs). */
   cost: number;
-  /** Optional free-form note. */
   note?: string;
   createdAt: number;
   updatedAt: number;
 }
 
-/** 'L' for combustion (petrol/diesel/hybrid), 'kWh' for electric charging. */
 export type FuelUnit = 'L' | 'kWh';
 
 export interface FuelExpense extends ExpenseBase {
   category: 'fuel';
-  /** Unit captured at entry time so historical rows render correctly even if the car later switches type. */
   unit: FuelUnit;
-  /** Amount of fuel/energy: liters or kWh. */
   quantity: number;
-  /** Price per liter or per kWh. */
   unitPrice: number;
   odometerKm?: number;
 }
@@ -71,13 +61,11 @@ export interface PartsExpense extends ExpenseBase {
 
 export interface InspectionExpense extends ExpenseBase {
   category: 'inspection';
-  /** ISO date — when the next inspection is due. */
   nextDueDate?: string;
 }
 
 export interface OtherExpense extends ExpenseBase {
   category: 'other';
-  /** Free-form label (e.g. "Car wash", "Toll", "Road tax"). */
   description: string;
 }
 
@@ -98,18 +86,15 @@ export interface VehicleDocument {
   kind: DocumentKind;
   insurer: string;
   policyNumber: string;
-  /** ISO yyyy-mm-dd */
   startDate: string;
-  /** ISO yyyy-mm-dd */
   endDate: string;
   cost: number;
-  /** Compressed photo blobs of the policy/document. */
-  photos: Blob[];
+  photoUrls: string[];
   note?: string;
   createdAt: number;
   updatedAt: number;
 }
 
-export type DocumentInput = Omit<VehicleDocument, 'id' | 'createdAt' | 'updatedAt'>;
+export type DocumentInput = Omit<VehicleDocument, 'id' | 'createdAt' | 'updatedAt' | 'photoUrls'>;
 
 export type DocumentStatus = 'active' | 'expiring' | 'expired';

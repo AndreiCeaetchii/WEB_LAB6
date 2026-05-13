@@ -37,7 +37,7 @@ export function DocumentList({ kind, title, description }: DocumentListProps) {
   const docsLoaded = useDocumentsStore((s) => s.loaded);
   const loadDocs = useDocumentsStore((s) => s.load);
   const remove = useDocumentsStore((s) => s.remove);
-  const update = useDocumentsStore((s) => s.update);
+  const removePhoto = useDocumentsStore((s) => s.removePhoto);
 
   useEffect(() => {
     void loadCars();
@@ -79,8 +79,8 @@ export function DocumentList({ kind, title, description }: DocumentListProps) {
     await remove(doc.id);
   };
 
-  const handlePhotosChange = async (doc: VehicleDocument, photos: Blob[]) => {
-    await update(doc.id, { photos });
+  const handlePhotoRemove = async (doc: VehicleDocument, url: string) => {
+    await removePhoto(doc.carId, doc.id, url);
   };
 
   const ready = carsLoaded && docsLoaded;
@@ -160,7 +160,7 @@ export function DocumentList({ kind, title, description }: DocumentListProps) {
                   car={carsById.get(d.carId)}
                   onEdit={() => handleEdit(d)}
                   onDelete={() => handleDelete(d)}
-                  onPhotosChange={(photos) => handlePhotosChange(d, photos)}
+                  onPhotoRemove={(url) => handlePhotoRemove(d, url)}
                 />
               ))}
             </div>
