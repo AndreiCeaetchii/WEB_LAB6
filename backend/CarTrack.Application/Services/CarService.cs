@@ -31,10 +31,10 @@ public class CarService(ICarRepository carRepository, IStorageService storageSer
 
     public async Task<CarDto> GetCarAsync(Guid carId, Guid userId, CancellationToken ct = default)
     {
-        _ = await carRepository.GetCarUserAsync(carId, userId, ct)
-            ?? throw new ForbiddenException("Access denied");
         var car = await carRepository.GetCarWithPicturesAsync(carId, ct)
             ?? throw new NotFoundException("Car not found");
+        _ = await carRepository.GetCarUserAsync(carId, userId, ct)
+            ?? throw new ForbiddenException("Access denied");
         return await ToDtoAsync(car, ct);
     }
 
@@ -66,12 +66,17 @@ public class CarService(ICarRepository carRepository, IStorageService storageSer
         return await ToDtoAsync(car, ct);
     }
 
-    public async Task<CarDto> UpdateCarAsync(
-        Guid carId, Guid userId, CarInput input, CancellationToken ct = default)
+    private async Task AssertOwnerAsync(Guid carId, Guid userId, CancellationToken ct)
     {
         var carUser = await carRepository.GetCarUserAsync(carId, userId, ct);
         if (carUser is null || carUser.Role != "owner")
-            throw new ForbiddenException("Only the owner can update a car");
+            throw new ForbiddenException("Only the owner can perform this action");
+    }
+
+    public async Task<CarDto> UpdateCarAsync(
+        Guid carId, Guid userId, CarInput input, CancellationToken ct = default)
+    {
+        await AssertOwnerAsync(carId, userId, ct);
 
         var car = await carRepository.GetCarWithPicturesAsync(carId, ct)
             ?? throw new NotFoundException("Car not found");
@@ -92,9 +97,7 @@ public class CarService(ICarRepository carRepository, IStorageService storageSer
     public async Task<CarDto> PatchCarAsync(
         Guid carId, Guid userId, CarPatchInput input, CancellationToken ct = default)
     {
-        var carUser = await carRepository.GetCarUserAsync(carId, userId, ct);
-        if (carUser is null || carUser.Role != "owner")
-            throw new ForbiddenException("Only the owner can patch a car");
+        await AssertOwnerAsync(carId, userId, ct);
 
         var car = await carRepository.GetCarWithPicturesAsync(carId, ct)
             ?? throw new NotFoundException("Car not found");
@@ -131,15 +134,13 @@ public class CarService(ICarRepository carRepository, IStorageService storageSer
 
     public async Task DeleteCarAsync(Guid carId, Guid userId, CancellationToken ct = default)
     {
-        var carUser = await carRepository.GetCarUserAsync(carId, userId, ct);
-        if (carUser is null || carUser.Role != "owner")
-            throw new ForbiddenException("Only the owner can delete a car");
+        await AssertOwnerAsync(carId, userId, ct);
 
         var car = await carRepository.GetCarWithPicturesAsync(carId, ct)
             ?? throw new NotFoundException("Car not found");
 
-        foreach (var cp in car.CarPictures)
-            await storageService.DeleteObjectAsync(cp.Picture.ObjectKey);
+        await Task.WhenAll(car.CarPictures
+            .Select(cp => storageService.DeleteObjectAsync(cp.Picture.ObjectKey)));
 
         await carRepository.RemoveCarAsync(car);
         await carRepository.SaveChangesAsync(ct);
@@ -148,9 +149,7 @@ public class CarService(ICarRepository carRepository, IStorageService storageSer
     public async Task<UploadUrlResponse> GetUploadUrlAsync(
         Guid carId, Guid userId, CancellationToken ct = default)
     {
-        var carUser = await carRepository.GetCarUserAsync(carId, userId, ct);
-        if (carUser is null || carUser.Role != "owner")
-            throw new ForbiddenException("Only the owner can upload photos");
+        await AssertOwnerAsync(carId, userId, ct);
 
         _ = await carRepository.GetCarWithPicturesAsync(carId, ct)
             ?? throw new NotFoundException("Car not found");
@@ -174,9 +173,7 @@ public class CarService(ICarRepository carRepository, IStorageService storageSer
     public async Task RemovePhotoAsync(
         Guid carId, Guid userId, Guid pictureId, CancellationToken ct = default)
     {
-        var carUser = await carRepository.GetCarUserAsync(carId, userId, ct);
-        if (carUser is null || carUser.Role != "owner")
-            throw new ForbiddenException("Only the owner can remove photos");
+        await AssertOwnerAsync(carId, userId, ct);
 
         var carPicture = await carRepository.GetCarPictureAsync(carId, pictureId, ct)
             ?? throw new NotFoundException("Photo not found");

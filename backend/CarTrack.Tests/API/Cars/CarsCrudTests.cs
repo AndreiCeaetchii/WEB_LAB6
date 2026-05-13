@@ -110,7 +110,7 @@ public class CarsCrudTests(CustomWebApplicationFactory factory) : IClassFixture<
     }
 
     [Fact]
-    public async Task DeleteCar_ThenGetCar_Returns403()
+    public async Task DeleteCar_ThenGetCar_Returns404()
     {
         var (client, _) = await RegisterUser("delete2@example.com");
         var createResp = await client.PostAsJsonAsync("/api/cars", DefaultCarPayload());
@@ -119,7 +119,7 @@ public class CarsCrudTests(CustomWebApplicationFactory factory) : IClassFixture<
 
         var response = await client.GetAsync($"/api/cars/{car.Id}");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
