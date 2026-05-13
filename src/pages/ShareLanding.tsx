@@ -21,7 +21,7 @@ type State =
   | { status: 'redeemed'; carId: string };
 
 export default function ShareLandingPage() {
-  const { token = '' } = useParams<{ token: string }>();
+  const { token } = useParams<{ token: string }>();
   const { isAuthenticated, isInitializing } = useAuth();
   const navigate = useNavigate();
   const invalidateCars = useCarsStore((s) => s.invalidate);
@@ -30,14 +30,17 @@ export default function ShareLandingPage() {
 
   useEffect(() => {
     if (!token) return;
-    axios.get<CarPreviewResponse>(`/api/shares/${token}`)
+    const controller = new AbortController();
+    axios.get<CarPreviewResponse>(`/api/shares/${token}`, { signal: controller.signal })
       .then(({ data }) => setState({ status: 'preview', data }))
       .catch((err) => {
-        const msg = err.response?.status === 404
+        if (axios.isCancel(err)) return;
+        const msg = axios.isAxiosError(err) && err.response?.status === 404
           ? 'This share link is invalid or has expired.'
           : 'Could not load share info. Please try again.';
         setState({ status: 'error', message: msg });
       });
+    return () => controller.abort();
   }, [token]);
 
   const handleAccept = async () => {
@@ -47,7 +50,7 @@ export default function ShareLandingPage() {
       invalidateCars();
       setState({ status: 'redeemed', carId: data.carId });
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
       if (status === 409) {
         setState({ status: 'error', message: 'This invite has already been used.' });
       } else {
@@ -111,7 +114,7 @@ export default function ShareLandingPage() {
         <div className="mt-6 rounded-lg border border-border p-4">
           <p className="text-lg font-semibold">{data.year} {data.make} {data.model}</p>
           <p className="mt-1 text-sm text-ink-muted">
-            Expires {new Date(data.expiresAt).toLocaleTimeString()}
+            Expires {new Date(data.expiresAt).toLocaleString()}
           </p>
         </div>
 
