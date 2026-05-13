@@ -1,4 +1,6 @@
+using CarTrack.Domain.Interfaces;
 using CarTrack.Infrastructure.Persistence;
+using CarTrack.Tests.Fakes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -25,13 +27,18 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
+            var dbDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (descriptor != null) services.Remove(descriptor);
+            if (dbDescriptor != null) services.Remove(dbDescriptor);
 
             var dbName = "TestDb_" + Guid.NewGuid();
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase(dbName));
+
+            var storageDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IStorageService));
+            if (storageDescriptor != null) services.Remove(storageDescriptor);
+            services.AddSingleton<IStorageService, FakeStorageService>();
         });
     }
 }
