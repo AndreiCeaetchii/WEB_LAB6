@@ -18,6 +18,7 @@ interface ExpensesState {
   removeForCar: (carId: ID) => Promise<number>;
   byCar: (carId: ID) => Expense[];
   totalForCar: (carId: ID) => number;
+  invalidate: () => void;
 }
 
 export const useExpensesStore = create<ExpensesState>((set, get) => ({
@@ -93,4 +94,5 @@ export const useExpensesStore = create<ExpensesState>((set, get) => ({
     get().expenses
       .filter((e) => e.carId === carId)
       .reduce((sum, e) => sum + (Number(e.cost) || 0), 0),
+  invalidate: () => set({ loaded: false }),
 }));

@@ -12,6 +12,9 @@ public class FakeStorageService : IStorageService
 
     public Task DeleteObjectAsync(string objectKey) => Task.CompletedTask;
 
+    public Task UploadAsync(string objectKey, Stream data, string contentType, CancellationToken ct = default)
+        => Task.CompletedTask;
+
     public string BuildObjectKey(string prefix, Guid ownerId, Guid entityId, string filename)
         => $"{prefix}/{ownerId}/{entityId}/{filename}";
 }

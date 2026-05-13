@@ -47,6 +47,15 @@ public class MinioStorageService : IStorageService
     public async Task DeleteObjectAsync(string objectKey)
         => await _s3.DeleteObjectAsync(_settings.Bucket, objectKey);
 
+    public async Task UploadAsync(string objectKey, Stream data, string contentType, CancellationToken ct = default)
+        => await _s3.PutObjectAsync(new PutObjectRequest
+        {
+            BucketName = _settings.Bucket,
+            Key = objectKey,
+            InputStream = data,
+            ContentType = contentType
+        }, ct);
+
     public string BuildObjectKey(string prefix, Guid ownerId, Guid entityId, string filename)
         => $"{prefix}/{ownerId}/{entityId}/{filename}";
 
