@@ -7,6 +7,7 @@ import { ExpenseRow } from '../components/ExpenseRow';
 import { DocumentForm } from '../components/DocumentForm';
 import { DocumentRow } from '../components/DocumentRow';
 import { PlusIcon, StarIcon } from '../components/icons';
+import { ShareModal } from '../components/ShareModal';
 import { getAccent, hexToRgbTuple } from '../lib/palette';
 import { formatMoney } from '../lib/format';
 import { useCarsStore } from '../stores/carsStore';
@@ -32,6 +33,7 @@ export default function CarDetailPage() {
   const loadDocuments = useDocumentsStore((s) => s.load);
   const removeDocument = useDocumentsStore((s) => s.remove);
 
+  const [shareOpen, setShareOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
@@ -145,6 +147,9 @@ export default function CarDetailPage() {
             </button>
             <button type="button" onClick={() => setEditOpen(true)} className="btn-outline">
               Edit
+            </button>
+            <button type="button" onClick={() => setShareOpen(true)} className="btn-outline">
+              Share
             </button>
             <button type="button" onClick={handleDelete} className="btn-ghost text-danger">
               Delete
@@ -295,6 +300,9 @@ export default function CarDetailPage() {
         )}
       </section>
 
+      {shareOpen && (
+        <ShareModal carId={car.id} onClose={() => setShareOpen(false)} />
+      )}
       <CarForm open={editOpen} onClose={() => setEditOpen(false)} car={car} />
       <ExpenseForm
         open={expenseFormOpen}

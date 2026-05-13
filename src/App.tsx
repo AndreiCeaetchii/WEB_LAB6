@@ -12,6 +12,7 @@ import SettingsPage from './pages/Settings';
 import NotFoundPage from './pages/NotFound';
 import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
+import ShareLandingPage from './pages/ShareLanding';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/share/:token" element={<ShareLandingPage />} />
           <Route
             element={
               <ProtectedRoute>

@@ -62,6 +62,7 @@ interface CarsState {
   remove: (id: ID) => Promise<void>;
   toggleFavorite: (id: ID) => Promise<void>;
   getById: (id: ID) => Car | undefined;
+  invalidate: () => void;
 }
 
 export const useCarsStore = create<CarsState>((set, get) => ({
@@ -152,4 +153,6 @@ export const useCarsStore = create<CarsState>((set, get) => ({
   },
 
   getById: (id) => get().cars.find((c) => c.id === id),
+
+  invalidate: () => set({ loaded: false }),
 }));
